@@ -1,0 +1,1 @@
+call converter_lite.exe --fmk=ONNX --modelFile="/models/emotion/export/distilbert_zh_int32.onnx" --outputFile=emotion_int8_dynamic --configFile=dynamic_quant.cfg --inputShape="input_ids:1,128;attention_mask:1,128;token_type_ids:1,128"
