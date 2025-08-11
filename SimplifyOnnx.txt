@@ -1,0 +1,7 @@
+pip install onnxsim rich -U
+# 再简化一次（可重用已导出的 onnx 文件） 第一次转换完onnx后运行
+python -m onnxsim ./onnx/distilbert_emotion_256_int32.onnx ./onnx/distilbert_emotion_256_int32.onnx --dynamic-input-shape
+
+# 再次 ORT 数值对齐（在已简化的 onnx 上再跑一次校验）
+python -m onnxsim ./onnx/distilbert_emotion_256_int32.onnx ./onnx/distilbert_emotion_256_int32_simplified.onnx --test-input-shape "input_ids:1,256" "attention_mask:1,256"
+# 或用你 export_to_onnx.py 里的 ORT 验证代码重新跑一遍
