@@ -152,7 +152,7 @@ def main():
     
     # 文件路径
     test_file = "./data/test/usual_test_labeled.txt"
-    model_path = "./runs/distilbert_balanced"
+    model_path = "./runs/distilbert_balanced20k_retrain"
     
     print("🚀 开始模型测试...")
     
@@ -166,7 +166,7 @@ def main():
         return
     
     # 加载测试数据
-    texts, true_labels = load_test_data(test_file, num_samples=100)
+    texts, true_labels = load_test_data(test_file, num_samples=1000)
     
     # 加载模型
     print("\n📦 加载训练好的模型...")

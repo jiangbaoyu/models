@@ -1,0 +1,20 @@
+{
+  "total_in": 26963,
+  "auto_label": false,
+  "dropped_unknown_label": 0,
+  "after_total": 20842,
+  "class_dist": {
+    "angry": 4000,
+    "happy": 4000,
+    "neutral": 4000,
+    "surprise": 2671,
+    "sad": 4000,
+    "fear": 2171
+  },
+  "target_per_class": 4000,
+  "augment_used": true,
+  "augment_count": {
+    "surprise": 1977,
+    "fear": 2836
+  }
+}

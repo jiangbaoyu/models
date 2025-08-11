@@ -122,20 +122,47 @@ def load_clean_csv(csv_path: str) -> pd.DataFrame:
     return out
 
 # =========================
+# 加载JSON格式数据
+# =========================
+def load_json_data(json_path: str) -> pd.DataFrame:
+    """
+    加载JSON格式的训练数据
+    期望格式：[{"id": 1, "content": "文本内容", "label": "标签"}, ...]
+    """
+    with open(json_path, 'r', encoding='utf-8') as f:
+        data = json.load(f)
+    
+    texts = []
+    labels = []
+    for item in data:
+        texts.append(item['content'])
+        labels.append(item['label'])
+    
+    df = pd.DataFrame({"text": texts, "label": labels})
+    print(f"✅ 加载JSON数据: {len(df)} 条样本")
+    print("整体标签分布:", Counter(df["label"]))
+    return df
+
+# =========================
 # 构建 Datasets
 # =========================
-def load_or_make_dataset(csv_path, seed, limit_train=None, limit_val=None):
-    if csv_path and os.path.exists(csv_path):
-        df = load_clean_csv(csv_path)
-        label_map = {0:"joy", 1:"anger", 2:"disgust", 3:"depress"}
-        df["label"] = df["label"].map(label_map)
-        print(f"✅ 加载CSV数据: {len(df)} 条样本")
-        print("整体标签分布:", Counter(df["label"]))
+def load_or_make_dataset(data_path, seed, limit_train=None, limit_val=None):
+    if data_path and os.path.exists(data_path):
+        if data_path.endswith('.json') or data_path.endswith('.txt'):
+            # 加载JSON格式数据
+            df = load_json_data(data_path)
+        else:
+            # 加载CSV格式数据
+            df = load_clean_csv(data_path)
+            label_map = {0:"joy", 1:"anger", 2:"disgust", 3:"depress"}
+            df["label"] = df["label"].map(label_map)
+            print(f"✅ 加载CSV数据: {len(df)} 条样本")
+            print("整体标签分布:", Counter(df["label"]))
     else:
         texts  = ["今天心情很好，效率也很高！","真是气死我了，服务太差。","一般般吧，没什么感觉。","这个功能做得不错，体验很棒！","糟透了，再也不会用了。","还行吧，中规中矩。"]
         labels = ["joy","anger","disgust","joy","anger","disgust"]
         df = pd.DataFrame({"text":texts,"label":labels})
-        print("ℹ️ 未提供 CSV，使用内置小样例数据。")
+        print("ℹ️ 未提供数据文件，使用内置小样例数据。")
 
     uniq = sorted(df["label"].astype(str).unique().tolist())
     label2id = {lab:i for i, lab in enumerate(uniq)}
@@ -251,15 +278,15 @@ class LogitAdjustedCETrainer(Trainer):
 # =========================
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--csv", type=str, default="simplifyweibo_4_moods.csv")
-    ap.add_argument("--out_dir", type=str, default="./runs/distilbert_balanced")
+    ap.add_argument("--data", type=str, default="./data/train/usual_train.txt", help="训练数据文件路径，支持JSON/TXT格式")
+    ap.add_argument("--out_dir", type=str, default="./runs/distilbert_balanced20k")
     ap.add_argument("--epochs_head", type=float, default=1.0)
     ap.add_argument("--epochs_full", type=float, default=6.0)   # 稍多一轮
     ap.add_argument("--batch_size", type=int, default=8)
     ap.add_argument("--max_len", type=int, default=256)
     ap.add_argument("--seed", type=int, default=42)
-    ap.add_argument("--limit_train", type=int, default=10000)   # 可改 20000 更稳
-    ap.add_argument("--limit_val", type=int, default=4000)
+    ap.add_argument("--limit_train", type=int, default=20000)   # 设置为20000次训练
+    ap.add_argument("--limit_val", type=int, default=5000)
     ap.add_argument("--tau", type=float, default=1.0, help="Logit-adjustment 的温度（建议 0.7~1.2）")
     args = ap.parse_args()
 
@@ -271,7 +298,7 @@ def main():
     print("[Tokenize 检查]", tokenizer.tokenize("今天心情很好，效率也很高！")[:20])
 
     # 数据集
-    ds, label2id, id2label = load_or_make_dataset(args.csv, args.seed, args.limit_train, args.limit_val)
+    ds, label2id, id2label = load_or_make_dataset(args.data, args.seed, args.limit_train, args.limit_val)
 
     # 训练时轻清洗 + tokenize
     _url = re.compile(r'https?://\S+|www\.\S+'); _at = re.compile(r'@\S+')
